@@ -1,0 +1,105 @@
+---
+title: "PA"
+author: "Kailyn Kragas"
+format:
+  html:
+    toc: true
+    code-fold: true
+    embed-resources: true
+echo: true
+warning: false
+theme: lux
+---
+
+[PA 2.1 on GitHub](https://github.com/kailynnk/PA-2.1)
+
+# Titanic Wrangling
+**In this practice activity you'll continue to work with the titanic dataset in ways that flex what you've learned about both data wrangling and data visualization.**
+
+
+```{python}
+import pandas as pd
+from plotnine import *
+```
+
+
+```{python}
+data_dir = "https://dlsun.github.io/pods/data/"
+titanic_df = pd.read_csv(data_dir + "titanic.csv")
+titanic_df.head(5)
+```
+
+
+```{python}
+titanic_df.isna().sum()
+```
+
+## 1. Filter the data to include passengers only. Calculate the joint distribution (cross-tab) between a passenger's class and where they embarked.**
+
+```{python}
+titanic_df["type"] = titanic_df["class"].map({
+    "1st": "passenger",
+    "2nd": "passenger",
+    "3rd": "passenger",
+    "victualling crew": "crew",
+    "engineering crew": "crew",
+    "deck crew": "crew"
+})
+```
+
+```{python}
+titanic_passengers = titanic_df[titanic_df["type"] == "passenger"]
+```
+
+```{python}
+ctab_counts = pd.crosstab(titanic_passengers["class"], titanic_passengers["embarked"])
+ctab_counts
+```
+
+```{python}
+ctab_norm = pd.crosstab(titanic_passengers["class"], titanic_passengers["embarked"], normalize = True)
+ctab_norm
+```
+
+## 2. Using the joint distribution that calculated above, calculate the following:
+
+* the conditional distribution of their class given where they embarked
+* the conditional distribution of where they embarked given their class
+
+Use the conditional distributions that you calculate to answer the following quesitons:
+
+* What proportion of 3rd class passengers embarked at Southampton? 0.70
+* What proportion of Southampton passengers were in 3rd class? 0.54
+
+
+```{python}
+# easier: group by embarked and for each "embarked" group, count the frequency and normalize within group
+titanic_passengers.groupby("embarked")["class"].value_counts(normalize = True)
+```
+
+```{python}
+# same thing with cross tab
+ctab_norm.divide(ctab_norm.sum(axis=0), axis=1)
+```
+
+```{python}
+titanic_passengers.groupby("class")["embarked"].value_counts(normalize = True)
+```
+
+```{python}
+# same thing with cross tab
+ctab_norm.divide(ctab_norm.sum(axis=1), axis=0)
+```
+
+## 3. Make a visualization showing the distribution of a passenger's class, given where they embarked.
+
+Discuss the pros and cons of using this visualization versus the distributions you calculated before, to answer the previous questions.
+
+```{python}
+(ggplot(titanic_passengers, aes(x = "embarked", fill = "class")) +
+    geom_bar(position='fill') + 
+    theme_classic() +
+    labs(title = "Distribution of Passenger Class Given Embarked"))
+```
+
+This visualization makes it easier for users to understand how titanic passenger class is distributed across the different embarked categories. Even without looking at the numbers, they have an idea of what the class proportions are for each embarked group.
